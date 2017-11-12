@@ -1,0 +1,6 @@
+*.swp
+pcaps/*
+pcaps*
+*.pcap
+../*
+.DS_Store
