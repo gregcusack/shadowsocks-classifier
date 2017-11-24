@@ -22,53 +22,7 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import StratifiedShuffleSplit
 from sklearn.model_selection import GridSearchCV
 
-
-def get_num_pkts(flow):
-	return len(flow[TCP]) #we'll only look at tcp packets now
-
-def get_pkt_len(packet):
-	return len(packet)	#call as get_pkt_len(p)
-
-def get_pkt_time(packet):
-	return p.time
-
-def get_pkt_flag(packet):
-	return p[TCP].flags #must be called within a check for TCP in packet
-
-def get_avg_pkt_len(flow):
-	total = 0
-	avg = 0
-	for p in flow:
-		total += len(p)
-		avg += 1
-	return total/avg
-
-#may want to expand this to check time betw. Tx and subsequent Rx and vice versa
-#rather than just looking at random time differences
-def get_avg_time_betw_pkts(flow):
-	prev = 0
-	total_diff = 0
-	curr_diff = 0
-	num_pkts = 0 #may want to change this to num_pkts = get_num_pkts(flow)
-	for p in flow:
-		num_pkts += 1
-		if num_pkts == 1:
-			prev = p.time
-			continue
-		curr_diff = p.time - prev
-		total_diff += curr_diff
-		prev = p.time
-	return total_diff/num_pkts
-
-def get_flow_duration(flow):
-	length = len(flow[TCP]) #just looking at TCP flow duration
-	return flow[length-1].time - flow[0].time
-
-# 0: No SS, 1: SS
-def is_ss(key):
-	if '18.216.115.170' in key:
-		return 1
-	return 0
+from data import *
 
 def fitActPlot(prediction, actual):
 	t = np.arange(0., 2., 0.2)
@@ -79,37 +33,48 @@ def fitActPlot(prediction, actual):
 	plt.ylabel('Predicted MEDV Values')
 
 if __name__ == '__main__':
+	"""
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	s = pkt_list.sessions()
 	d = {}
 	for k,v in s.iteritems():
 		d[k] = []
-		d[k].append(get_num_pkts(v))
-		d[k].append(get_avg_pkt_len(v)) #this fcn and the one above could be combined
 		d[k].append(get_flow_duration(v))
-		d[k].append(get_avg_time_betw_pkts(v))
+		d[k].append(get_min_ia_time(v))
+		d[k].append(get_mean_ia_time(v))
+		d[k].append(get_max_ia_time(v))
+		d[k].append(get_stddev_ia_time(v))
+		d[k].append(get_min_pkt_len(v))
+		d[k].append(get_mean_pkt_len(v))
+		d[k].append(get_max_pkt_len(v))
+		d[k].append(get_stddev_pkt_len(v))
+		d[k].append(get_num_pkts(v)) #this fcn and the one above could be combined
 		d[k].append(is_ss(k))
 
 	#need to create column that is our decision column
-	columns = ['#pkts','avg_pkt_len','flow_duration','avg_time_betw_pkts','is_ss']
+	#columns = ['#pkts','avg_pkt_len','flow_duration','avg_time_betw_pkts','is_ss']
+	#columns = ['flow_duration','min_ia_time','mean_ia_time','max_ia_time','stddev_ia_time','min_pkt_len','mean_pkt_len','max_pkt_len','stddev_pkt_len','is_ss']
+	columns = ['flow_duration','min_ia_time','mean_ia_time','max_ia_time','stddev_ia_time','min_pkt_len','mean_pkt_len','max_pkt_len','stddev_pkt_len','#pkts','is_ss']
+
 	df_data = pd.DataFrame()
 	df_data = df_data.from_dict(d, orient='index')
 	df_data.columns = columns
-
+	
 	df_targ = df_data['is_ss']
 	del df_data['is_ss']
 	#print df_data
 	#print df_targ
-
 	#for i in range(0,10):
 	#xTrain, xTest, yTrain, yTest = train_test_split(df_data, df_targ, train_size=0.7, random_state=7)
+	
+	"""
 	xTrain, xTest, yTrain, yTest = train_test_split(df_data, df_targ, train_size=0.7, random_state=42)
 	
 	###########################   SVC   #############################
 	#gamma = [0.001, 0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 20.0, 50.0, 100.0]
 	#high gamma: low fp, high fn
 	# Values here for gamma and C are from the results in find_g_c_SVM.py
-	gamma = [0.01]
+	gamma = [0.001]
 	C_values = [100] # C = 600 also is pretty good ~ 0.728 accuracy
 
 	#clf = svm.SVC(probability=True)
@@ -124,7 +89,7 @@ if __name__ == '__main__':
 		svm_pred = clf.predict(xTest)
 		svm_score = clf.score(xTest, yTest)
 		fpr, tpr, thresholds = metrics.roc_curve(yTest, distVectTest, pos_label=1)
-		
+
 		svm_accuracy = accuracy_score(yTest, svm_pred)
 		svm_recall = recall_score(yTest, svm_pred, pos_label=1)
 		svm_precision= precision_score(yTest, svm_pred, pos_label=1)
@@ -136,7 +101,7 @@ if __name__ == '__main__':
 		print('F1 Score: ', svm_f1_score)
 		
 		plt.figure()
-		plt.title('SVM ROC Curve, C = 100, gamma = 0.01')
+		plt.title('SVM ROC Curve, C = 100, gamma = 0.001')
 		plt.xlabel('False Positive Rate')
 		plt.ylabel('True Positive Rate')
 		plt.plot(fpr, tpr)
@@ -171,7 +136,7 @@ if __name__ == '__main__':
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
 	plt.plot(fpr, tpr)
-
+	"""
 	labels = ['No SS', 'SS']
 	cm = confusion_matrix(yTest, svm_pred)
 	print(cm)
@@ -184,6 +149,6 @@ if __name__ == '__main__':
 	ax.set_yticklabels([''] + labels)
 	plt.xlabel('Predicted')
 	plt.ylabel('True')
-	"""
+	
 	plt.show()
 

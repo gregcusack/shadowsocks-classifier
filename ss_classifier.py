@@ -14,59 +14,12 @@ import random
 import csv
 from csv import reader
 import pylab
-from scapy.all import *
 import os
 import math
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.preprocessing import MinMaxScaler, Normalizer
 
-
-def get_num_pkts(flow):
-	return len(flow[TCP]) #we'll only look at tcp packets now
-
-def get_pkt_len(packet):
-	return len(packet)	#call as get_pkt_len(p)
-
-def get_pkt_time(packet):
-	return p.time
-
-def get_pkt_flag(packet):
-	return p[TCP].flags #must be called within a check for TCP in packet
-
-def get_avg_pkt_len(flow):
-	total = 0
-	avg = 0
-	for p in flow:
-		total += len(p)
-		avg += 1
-	return total/avg
-
-#may want to expand this to check time betw. Tx and subsequent Rx and vice versa
-#rather than just looking at random time differences
-def get_avg_time_betw_pkts(flow):
-	prev = 0
-	total_diff = 0
-	curr_diff = 0
-	num_pkts = 0 #may want to change this to num_pkts = get_num_pkts(flow)
-	for p in flow:
-		num_pkts += 1
-		if num_pkts == 1:
-			prev = p.time
-			continue
-		curr_diff = p.time - prev
-		total_diff += curr_diff
-		prev = p.time
-	return total_diff/num_pkts
-
-def get_flow_duration(flow):
-	length = len(flow[TCP]) #just looking at TCP flow duration
-	return flow[length-1].time - flow[0].time
-
-# 0: No SS, 1: SS
-def is_ss(key):
-	if '18.216.115.170' in key:
-		return 1
-	return 0
+from data import *
 
 def fitActPlot(prediction, actual):
 	t = np.arange(0., 2., 0.2)
@@ -77,21 +30,28 @@ def fitActPlot(prediction, actual):
 	plt.ylabel('Predicted MEDV Values')
 
 if __name__ == '__main__':
-	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	"""
+	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	
 	s = pkt_list.sessions()
 
 	d = {}
 	for k,v in s.iteritems():
 		d[k] = []
-		d[k].append(get_num_pkts(v))
-		d[k].append(get_avg_pkt_len(v)) #this fcn and the one above could be combined
 		d[k].append(get_flow_duration(v))
-		d[k].append(get_avg_time_betw_pkts(v))
+		d[k].append(get_min_ia_time(v))
+		d[k].append(get_mean_ia_time(v))
+		d[k].append(get_max_ia_time(v))
+		d[k].append(get_stddev_ia_time(v))
+		d[k].append(get_min_pkt_len(v))
+		d[k].append(get_mean_pkt_len(v))
+		d[k].append(get_max_pkt_len(v))
+		d[k].append(get_stddev_pkt_len(v))
+		d[k].append(get_num_pkts(v)) #this fcn and the one above could be combined
 		d[k].append(is_ss(k))
 
 	#need to create column that is our decision column
-	columns = ['#pkts','avg_pkt_len','flow_duration','avg_time_betw_pkts','is_ss']
+	columns = ['flow_duration','min_ia_time','mean_ia_time','max_ia_time','stddev_ia_time','min_pkt_len','mean_pkt_len','max_pkt_len','stddev_pkt_len','#pkts','is_ss']
 	df_data = pd.DataFrame()
 	df_data = df_data.from_dict(d, orient='index')
 	df_data.columns = columns
@@ -102,7 +62,11 @@ if __name__ == '__main__':
 	#print df_targ
 	"""
 	#for i in range(0,10):
+	
+
 	xTrain, xTest, yTrain, yTest = train_test_split(df_data, df_targ, train_size=0.7, random_state=7)
+	
+
 	#clf = SVC()
 	#clf.fit(xTrain, yTrain) #fit all
 	#result = clf.predict(xTest)
@@ -112,7 +76,7 @@ if __name__ == '__main__':
 	#print('training score: ', score)
 
 	#this code is from project 5 part 6
-
+	"""
 	###########################   SVC   #############################
 	clf = svm.SVC(probability=True)
 	clf.fit(xTrain, yTrain)
@@ -136,13 +100,14 @@ if __name__ == '__main__':
 	print('svm recall = tp / (tp + fn): ', svm_recall)
 	print('svm precision = tp / (tp + fp): ', svm_precision)
 	print('F1 Score: ', svm_f1_score)
-	"""
-	"""
+
 	plt.figure()
 	plt.title('SVM ROC Curve (SVD=10 components)')
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
 	plt.plot(fpr, tpr)
+
+	#print(clf.coef_)
 
 	labels = ['No SS', 'SS']
 	cm = confusion_matrix(yTest, svm_pred)
@@ -156,7 +121,7 @@ if __name__ == '__main__':
 	ax.set_yticklabels([''] + labels)
 	plt.xlabel('Predicted')
 	plt.ylabel('True')
-
+	"""
 	########################### Multinomial Bayes ################
 	"""
 	bayes_clf = MultinomialNB()
@@ -223,6 +188,7 @@ if __name__ == '__main__':
 	log_score = logistic.score(xTest,yTest)
 	
 	print(log_score)
+	print(logistic.coef_)
 
 	fpr_2, tpr_2, thresholds = metrics.roc_curve(yTest, linear_pred, pos_label=1)
 
@@ -254,6 +220,7 @@ if __name__ == '__main__':
 	ax.set_yticklabels([''] + labels)
 	plt.xlabel('Predicted')
 	plt.ylabel('True')
+	
 	"""
 		scores_l1.append(logistic.score(xTest, yTest))
 		
