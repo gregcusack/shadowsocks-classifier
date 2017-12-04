@@ -21,7 +21,7 @@ Concentration of packets: count # of outgoing packets in non-overlapping spans o
 
 
 #Greg:
-Packet ratios: In/out ratio of packets
+Packet ratios: In/out ratio of packets - **Done**
 Packet size frequency distribution
 	-fourier analysis
 \# of incoming packets between outgoing packet and next incoming one

@@ -35,6 +35,31 @@ ML-based approach for detecting shadowsocks traffic
 		* Likely need to capture client -> ss-server handshake and see what we can find
 		* Is this dependent on ss-server used?  Do server provide dif. length handshakes????
 
+#Things to do:
+## Greg:
+* Packet ratios: In/out ratio of packets - **Done**
+* Packet size frequency distribution
+	* fourier analysis
+* \# of protocols used between initial syn-syn/ack-ack to FIN??
+* \# of incoming packets between outgoing packet and next incoming one
+* Burst Pattern: 
+	* \# of incoming packets between outgoing packet and the next outgoing one
+* Burst Length: 
+	* # of outgoing packets without two adjacent incoming packets
+* Concentration of packets: 
+	* # of packets in non-overlapping span of 30 packets (kinda like ratio of in to out)
+
+## Tanay:
+* Latency of request to response time 
+	* maybe time between client PSH/ACK to Server ACK
+	* Other way around too?
+* Get a ton of pcaps like a 1GB
+	* 500MB from websites in Amazon top 100
+	* 500MB from same set of websites using SS in Amazon top 100
+	* Don’t think it will take that long.
+	* make sure it’s isolated data, so just connection to the SS server
+
+
 # Requirements (as of 11/5/17)
 * Scapy
 * scikit-learn
@@ -42,3 +67,5 @@ ML-based approach for detecting shadowsocks traffic
 * numpy 
 * matplotlib
 * scipy????
+
+
