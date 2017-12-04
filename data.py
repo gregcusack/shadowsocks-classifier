@@ -133,3 +133,14 @@ def is_ss(key):
 	if '18.216.115.170' in key:
 		return 1
 	return 0
+
+####### Dictionary Calculations #######
+def get_out_in_ratio(dict):
+	try:
+		ret = float(dict[1][10])/float(dict[0][10])
+	except ZeroDivisionError:
+		return 0
+	return ret
+
+
+
