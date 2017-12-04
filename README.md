@@ -45,9 +45,9 @@ ML-based approach for detecting shadowsocks traffic
 * Burst Pattern: 
 	* \# of incoming packets between outgoing packet and the next outgoing one
 * Burst Length: 
-	* # of outgoing packets without two adjacent incoming packets
+	* \# of outgoing packets without two adjacent incoming packets
 * Concentration of packets: 
-	* # of packets in non-overlapping span of 30 packets (kinda like ratio of in to out)
+	* \# of packets in non-overlapping span of 30 packets (kinda like ratio of in to out)
 
 ## Tanay:
 * Latency of request to response time 
