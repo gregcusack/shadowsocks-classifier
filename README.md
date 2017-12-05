@@ -38,8 +38,7 @@ ML-based approach for detecting shadowsocks traffic
 #Things to do:
 ## Greg:
 * Packet ratios: In/out ratio of packets - **Done**
-* Packet size frequency distribution
-	* fourier analysis
+* Packet size frequency distribution - **Done**
 * \# of protocols used between initial syn-syn/ack-ack to FIN??
 * \# of incoming packets between outgoing packet and next incoming one
 * Burst Pattern: 

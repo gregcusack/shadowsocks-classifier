@@ -142,5 +142,60 @@ def get_out_in_ratio(dict):
 		return 0
 	return ret
 
+def get_in_out_ts(biflow,in_out_ts):
+	for p in biflow[0][12]:
+		in_out_ts.append([p[0].time,0]) # in flow
+	for p in biflow[1][12]:
+		in_out_ts.append([p[0].time,1]) # out flow
+	in_out_ts.sort()
+	return in_out_ts
+
+def get_min_mean_max_burst_len(biflow):
+	max_burst = 0
+	min_burst = 1000000000
+	in_out_ts = []
+	burst_count = 0
+	burst_val = 0
+	in_out_ts = get_in_out_ts(biflow,in_out_ts)
+	count = 0
+	for i in range(len(in_out_ts)):
+		if in_out_ts[i][1] != 1:	#check if in flow
+			if count == 0:
+				continue
+			else:
+				burst_count += 1
+				if count > max_burst:
+					max_burst = count
+				if count < min_burst:
+					min_burst = count
+				count = 0
+		else:
+			count += 1
+			burst_val += 1
+
+	burst_arr = []
+	if(burst_arr == 1000000000):
+		burst_arr.append(0)
+	else:
+		burst_arr.append(min_burst)
+	if(burst_count == 0):
+		burst_arr.append(0)
+	else:
+		burst_arr.append(float(burst_val)/float(burst_count))
+	burst_arr.append(max_burst)
+	#print(burst_arr)
+	return burst_arr
+
+
+
+
+
+
+
+
+
+
+
+
 
 
