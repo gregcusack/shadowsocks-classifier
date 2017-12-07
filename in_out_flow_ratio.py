@@ -34,6 +34,13 @@ if __name__ == '__main__':
 			dst_prt = re.search(":(\d+)",split[1]).group()[1:]
 			#print(src_prt)
 		direction_flag = True
+		if("10." in ip_src or "172.16" in ip_src or "172.31" in ip_src or "192.168" in ip_src):
+			direction_flag = True #outflow
+		elif("10." in ip_dst or "172.16" in ip_dst or "172.31" in ip_dst or "192.168" in ip_dst):
+			direction_flag = False #inflow
+		else:
+			continue
+			
 		if(ip_src < ip_dst): #ip_src first (out flow)
 			if(int(src_prt) < int(dst_prt)):
 				#print("ip_src:src_prt/ip_dst:dst_prt --> {}:{}/{}:{}".format(ip_src, src_prt, ip_dst, dst_prt))

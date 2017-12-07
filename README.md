@@ -43,7 +43,7 @@ ML-based approach for detecting shadowsocks traffic
 * \# of incoming packets between outgoing packet and next incoming one
 * Burst Pattern: 
 	* \# of incoming packets between outgoing packet and the next outgoing one
-* Burst Length: 
+* Burst Length: **Done**
 	* \# of outgoing packets without two adjacent incoming packets
 * Concentration of packets: 
 	* \# of packets in non-overlapping span of 30 packets (kinda like ratio of in to out)

@@ -1,4 +1,4 @@
-from sklearn import datasets, linear_model, model_selection, preprocessing, metrics
+from sklearn import linear_model, model_selection, preprocessing, metrics
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.linear_model import Ridge, Lasso

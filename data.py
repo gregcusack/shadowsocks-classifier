@@ -1,4 +1,5 @@
 from scapy.all import *
+import numpy as np
 import math
 
 def get_num_pkts(flow):
@@ -90,6 +91,22 @@ def get_stddev_ia_time(flow):
 	return (stddev/(num_pkts - 1)) ** 0.5
 
 
+def get_min_mean_max_pkt_len(flow):
+	min_len = 1000000000
+	num_pkts = 0
+	max_len = 0
+	total_len = 0
+	for p in flow:
+		length = len(p)
+		total_len += length
+		num_pkts += 1
+		if length < min_len:
+			min_len = length
+		if length > max_len:
+			max_len = length
+	mean_len = float(total_len)/float(num_pkts)
+	return [min_len, mean_len, max_len]
+"""
 def get_min_pkt_len(flow):
 	min_len = 0
 	num_pkts = 0
@@ -118,11 +135,12 @@ def get_max_pkt_len(flow):
 		if length > max_len:
 			max_len = length
 	return max_len
-
+"""
 def get_stddev_pkt_len(flow):
 	num_pkts = 0
 	stddev = 0
-	mean = get_mean_pkt_len(flow)
+	#mean = get_mean_pkt_len(flow)
+	mean = get_min_mean_max_pkt_len(flow)[1]
 	for p in flow:
 		num_pkts += 1
 		stddev += (len(p) - mean) ** 2
@@ -143,9 +161,9 @@ def get_out_in_ratio(dict):
 	return ret
 
 def get_in_out_ts(biflow,in_out_ts):
-	for p in biflow[0][12]:
+	for p in biflow[0][14]:
 		in_out_ts.append([p[0].time,0]) # in flow
-	for p in biflow[1][12]:
+	for p in biflow[1][14]:
 		in_out_ts.append([p[0].time,1]) # out flow
 	in_out_ts.sort()
 	return in_out_ts
@@ -154,42 +172,80 @@ def get_min_mean_max_burst_len(biflow):
 	max_burst = 0
 	min_burst = 1000000000
 	in_out_ts = []
-	burst_count = 0
-	burst_val = 0
 	in_out_ts = get_in_out_ts(biflow,in_out_ts)
-	count = 0
+	out_count = 0
+	in_count = 0
+	burst_lens = []
 	for i in range(len(in_out_ts)):
 		if in_out_ts[i][1] != 1:	#check if in flow
-			if count == 0:
+			if out_count == 0:
 				continue
-			else:
-				burst_count += 1
-				if count > max_burst:
-					max_burst = count
-				if count < min_burst:
-					min_burst = count
-				count = 0
+			in_count += 1
+			if in_count == 2:		# back to back inflows
+				if out_count > max_burst:
+					max_burst = out_count
+				if out_count < min_burst:
+					min_burst = out_count
+				burst_lens.append(out_count)
+				out_count = 0
+				in_count = 0
 		else:
-			count += 1
-			burst_val += 1
+			out_count += 1
 
 	burst_arr = []
-	if(burst_arr == 1000000000):
+	if(min_burst > 100000000):
 		burst_arr.append(0)
 	else:
 		burst_arr.append(min_burst)
-	if(burst_count == 0):
+	if(len(burst_lens) == 0):
 		burst_arr.append(0)
 	else:
-		burst_arr.append(float(burst_val)/float(burst_count))
+		burst_arr.append(np.mean(burst_lens))
 	burst_arr.append(max_burst)
 	#print(burst_arr)
 	return burst_arr
 
 
+####### Entropy #########
 
+#Calculate entropy of certificate URLs
+#Entropy fcn taken from: http://pythonfiddle.com/shannon-entropy-calculation/
+def range_bytes (): return range(256)
+def entropy(data, iterator=range_bytes):
+	if not data:
+		return 0
+	entropy = 0
+	for x in iterator():
+		p_x = float(data.count(chr(x)))/len(data)
+		if p_x > 0:
+			entropy += - p_x*math.log(p_x, 2)
+	return entropy
 
-
+def get_min_mean_max_payload_entropy(flow):
+	min_e = 9.0
+	max_e = 0.0
+	mean_e = 0.0
+	count = 0
+	total_e = 0.0
+	tmp = 0.0
+	for p in flow:
+		try:
+			payload = p[Raw].load
+		except IndexError:
+			continue
+		count += 1
+		tmp = entropy(payload)
+		if tmp < min_e:
+			min_e = tmp
+		if tmp > max_e:
+			max_e = tmp
+		total_e += tmp
+	if count == 0:
+		min_e = 0
+	else:
+		mean_e = float(total_e)/float(count)
+	#print([min_e, mean_e, max_e])
+	return [min_e, mean_e, max_e]
 
 
 

@@ -22,10 +22,10 @@ import scipy.fftpack
 from matplotlib.ticker import AutoMinorLocator
 from sklearn.model_selection import cross_val_score
 
-
 from data import *
 
 if __name__ == '__main__':
+	
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	s = pkt_list.sessions()
 	d = {}
@@ -51,7 +51,7 @@ if __name__ == '__main__':
 			direction_flag = False #inflow
 		else:
 			continue
-
+	
 		if(ip_src < ip_dst): #ip_src first
 			if(int(src_prt) < int(dst_prt)):
 				#print("ip_src:src_prt/ip_dst:dst_prt --> {}:{}/{}:{}".format(ip_src, src_prt, ip_dst, dst_prt))
@@ -71,20 +71,25 @@ if __name__ == '__main__':
 			d[k] = []
 			d[k].append([])
 			d[k].append([])
+		holder = []
 		d[k][direction_flag].append(direction_flag)
 		d[k][direction_flag].append(get_flow_duration(v))
 		d[k][direction_flag].append(get_min_ia_time(v))
 		d[k][direction_flag].append(get_mean_ia_time(v))
 		d[k][direction_flag].append(get_max_ia_time(v))
 		d[k][direction_flag].append(get_stddev_ia_time(v))
-		d[k][direction_flag].append(get_min_pkt_len(v))
-		d[k][direction_flag].append(get_mean_pkt_len(v))
-		d[k][direction_flag].append(get_max_pkt_len(v))
+		holder = get_min_mean_max_pkt_len(v)
+		d[k][direction_flag].append(holder[0])
+		d[k][direction_flag].append(holder[1])
+		d[k][direction_flag].append(holder[2])
 		d[k][direction_flag].append(get_stddev_pkt_len(v))
 		d[k][direction_flag].append(get_num_pkts(v)) #this fcn and the one above could be combined
+		holder = get_min_mean_max_payload_entropy(v)
+		d[k][direction_flag].append(holder[0])
+		d[k][direction_flag].append(holder[1])
+		d[k][direction_flag].append(holder[2])
 		d[k][direction_flag].append(v)
 
-	#print(d[k])
 	####### Both Direction Calculations ########
 	del_vals = []
 	df_dict = {}
@@ -108,19 +113,21 @@ if __name__ == '__main__':
 			df_dict[k].append(d[k][1][i+1])
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
-	
+
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
+	'i_min_e', 'i_mean_e', 'i_max_e',
 	'o_flow_dur','o_min_ia','o_mean_ia','o_max_ia','o_sdev_ia',
 	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
+	'o_min_e', 'o_mean_e', 'o_max_e',
 	'biflow_rat', 'min_burst', 'mean_burst', 'max_burst',
 	'is_ss']
+	
 
 	df_data = pd.DataFrame()
 	df_data = df_data.from_dict(df_dict, orient='index')
 	df_data.columns = columns
-	
-	#even out data
+
 	counts = df_data['is_ss'].value_counts()
 	diff0 = counts[0] - counts[1]
 	diff = abs(diff0)
@@ -139,14 +146,15 @@ if __name__ == '__main__':
 		big_temp = df_data.drop(df_data[(df_data.is_ss==1)].index)
 		df_data = big_temp.append(vals)
 
+	
 	df_targ = df_data['is_ss']
 	del df_data['is_ss']
 	
-	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.3, random_state=10)
+	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.5, random_state=42)
 
 	X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
                                                             y_train,
-                                                            test_size=0.3, random_state=10)
+                                                            test_size=0.5, random_state=42)
 	
 	n_estimator = 10
 	max_depth = 10
@@ -166,7 +174,7 @@ if __name__ == '__main__':
 	y_pred_rf_lm = rf_lm.predict_proba(rf_enc.transform(rf.apply(X_test)))[:, 1]
 	fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_rf_lm)
 	
-	print("num fp: {}".format(fpr))
+	#print("num fp: {}".format(fpr))
 
 	roc_auc = auc(fpr, tpr)
 	plt.figure()
@@ -209,6 +217,10 @@ if __name__ == '__main__':
 	print('F1 Score: ', forest_f1_score)
 
 	plt.show()
+
+	
+
+
 
 
 
