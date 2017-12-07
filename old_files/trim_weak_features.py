@@ -22,8 +22,7 @@ import scipy.fftpack
 from matplotlib.ticker import AutoMinorLocator
 from sklearn.model_selection import cross_val_score
 
-
-from data import *
+from data_for_trim import *
 
 if __name__ == '__main__':
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
@@ -115,11 +114,13 @@ if __name__ == '__main__':
 	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
 	'biflow_rat', 'min_burst', 'mean_burst', 'max_burst',
 	'is_ss']
-
+	
 	df_data = pd.DataFrame()
 	df_data = df_data.from_dict(df_dict, orient='index')
 	df_data.columns = columns
-	
+	#del df_data['i_flow_dur'], df_data['i_mean_ia'], df_data['i_min_len'], df_data['o_mean_ia'], df_data['o_min_len'], df_data['min_burst'], df_data['max_burst']
+	del df_data['i_flow_dur'], df_data['i_min_ia'], df_data['i_min_len'], df_data['i_mean_len'], df_data['i_max_len'], df_data['i_sdev_len'], df_data['i_#pkts'], df_data['o_flow_dur'], df_data['o_min_ia'], df_data['o_min_len'], df_data['o_#pkts'], df_data['min_burst'], df_data['mean_burst'], df_data['max_burst']
+	len_col = len(df_data.columns)
 	#even out data
 	counts = df_data['is_ss'].value_counts()
 	diff0 = counts[0] - counts[1]
@@ -181,13 +182,13 @@ if __name__ == '__main__':
 	plt.title("Random Forest Feature Importance")
 	plt.xlabel('Features')
 	plt.ylabel('Importance')
-	plt.xticks(range(len(columns)-1),columns[:-1])
-	ax.set_xticks(range(len(columns)-1))
-	ax.set_xticklabels(columns[:-1], rotation=60, fontsize=8)
+	plt.xticks(range(len_col-1),df_data.columns[:-1])
+	ax.set_xticks(range(len_col-1))
+	ax.set_xticklabels(df_data.columns[:-1], rotation=60, fontsize=8)
 	#ax.xaxis.set_minor_locator(AutoMinorLocator(5))
 	#ax.tick_params(axis='x',which='minor',bottom='on')
 	#plt.axis().xaxis.set_tick_params(which='minor', top = 'off')
-	plt.plot(range(len(columns)-1), rf.feature_importances_)
+	plt.plot(range(len_col-1), rf.feature_importances_)
 	print(rf.feature_importances_)
 	
 	y_pred = rf.predict(X_test)

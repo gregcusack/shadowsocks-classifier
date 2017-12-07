@@ -25,7 +25,7 @@ from sklearn.model_selection import cross_val_score
 from data import *
 
 if __name__ == '__main__':
-	
+	"""
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	s = pkt_list.sessions()
 	d = {}
@@ -51,16 +51,21 @@ if __name__ == '__main__':
 			direction_flag = False #inflow
 		else:
 			continue
+	
 		if(ip_src < ip_dst): #ip_src first
 			if(int(src_prt) < int(dst_prt)):
+				#print("ip_src:src_prt/ip_dst:dst_prt --> {}:{}/{}:{}".format(ip_src, src_prt, ip_dst, dst_prt))
 				src_dst_pair = ip_src + ":" + src_prt + "_" + ip_dst + ":" + dst_prt
 			else:
+				#print("ip_src:src_prt/ip_dst:dst_prt --> {}:{}/{}:{}".format(ip_src, src_prt, ip_dst, dst_prt))
 				src_dst_pair = ip_src + ":" + dst_prt + "_" + ip_dst + ":" + src_prt
 		else: #ip_dst first
 			if(int(dst_prt) < int(src_prt)):
 				src_dst_pair = ip_dst + ":" + dst_prt + "_" + ip_src + ":" + src_prt
 			else:
 				src_dst_pair = ip_dst + ":" + src_prt + "_" + ip_src + ":" + dst_prt
+				#print("ip_dst:dst_prt/ip_src:src_prt --> {}:{}/{}:{}".format(ip_dst, dst_prt, ip_src, src_prt))
+			#src_dst_pair = ip_dst + ":" + dst_prt + "_" + ip_src + ":" + src_prt
 		k = proto + "_" + src_dst_pair
 		if k not in d:
 			d[k] = []
@@ -144,12 +149,12 @@ if __name__ == '__main__':
 	
 	df_targ = df_data['is_ss']
 	del df_data['is_ss']
-	
-	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.5, random_state=42)
+	"""
+	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.3, random_state=42)
 
-	X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
-                                                            y_train,
-                                                            test_size=0.5, random_state=42)
+	#X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
+    #                                                        y_train,
+    #                                                        test_size=0.5, random_state=42)
 	
 	n_estimator = 10
 	max_depth = 10
@@ -157,17 +162,18 @@ if __name__ == '__main__':
 	rf = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimator, 
 		n_jobs=-1, random_state=42,max_features=None, oob_score=True)#'auto')
 	
-	rf_enc = OneHotEncoder()
-	rf_lm = LogisticRegression()
+	#rf_enc = OneHotEncoder()
+	#rf_lm = LogisticRegression()
 	rf.fit(X_train, y_train)
-	rf_enc.fit(rf.apply(X_train))
-	rf_lm.fit(rf_enc.transform(rf.apply(X_train_lr)), y_train_lr)
+	#rf_enc.fit(rf.apply(X_train))
+	#rf_lm.fit(rf_enc.transform(rf.apply(X_train_lr)), y_train_lr)
 
-	score = cross_val_score(rf_lm, rf_enc.transform(rf.apply(X_train_lr)), y_train_lr, cv=10).mean()
+	score = cross_val_score(rf, X_train, y_train, cv=10).mean()
 	print("Score with the entire dataset = %.5f" % score)
 
-	y_pred_rf_lm = rf_lm.predict_proba(rf_enc.transform(rf.apply(X_test)))[:, 1]
-	fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_rf_lm)
+	#y_pred_rf_lm = rf_lm.predict_proba(rf_enc.transform(rf.apply(X_test)))[:, 1]
+	y_pred_rf = rf.predict_proba(X_test)[:, 1]
+	fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_rf)
 	
 	#print("num fp: {}".format(fpr))
 

@@ -4,3 +4,5 @@ pcaps*
 *.pcap
 ../*
 .DS_Store
+*.pyc
+
