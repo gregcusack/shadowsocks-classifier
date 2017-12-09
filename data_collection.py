@@ -3,7 +3,8 @@ from scapy.all import *
 from data import *
 
 def collect_data():
-	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	pkt_list = rdpcap("pcaps/ss_and_no_ss_BIG.pcapng")
 	s = pkt_list.sessions()
 	d = {}
 	ip_list = []
