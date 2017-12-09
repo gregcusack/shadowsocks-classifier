@@ -1,10 +1,6 @@
-import pandas as pd
-from scapy.all import *
-from data import *
 
-def collect_data():
-	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
-	pkt_list = rdpcap("pcaps/ss_and_no_ss_BIG.pcapng")
+if __name__ == '__main__':
+	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	print("Done loading")
 	s = pkt_list.sessions()
 	d = {}
@@ -89,9 +85,7 @@ def collect_data():
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
 	print("Done with flow features")
-	return df_dict
 
-def set_df_for_ML(df_dict, drop_list):
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
 	'i_min_e', 'i_mean_e', 'i_max_e',
@@ -124,32 +118,4 @@ def set_df_for_ML(df_dict, drop_list):
 		vals = vals.drop(vals.index[index_to_remove]) #drop random ints
 		big_temp = df_data.drop(df_data[(df_data.is_ss==1)].index)
 		df_data = big_temp.append(vals)
-
-	return [df_data, columns, len_col]
-
-
-def drop_cols(df_data, drop_list):
-	for key in drop_list:
-		del df_data[key]
-	return df_data
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

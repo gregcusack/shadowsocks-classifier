@@ -26,7 +26,10 @@ from data import *
 
 if __name__ == '__main__':
 	
-	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	#pkt_list = rdpcap("pcaps/noSS_SS_500.pcap")
+	pkt_list = rdpcap("pcaps/merge.pcap")
+	print("Done reading")
 	s = pkt_list.sessions()
 	d = {}
 	ip_list = []
@@ -84,7 +87,7 @@ if __name__ == '__main__':
 		d[k][direction_flag].append(holder[1])
 		d[k][direction_flag].append(holder[2])
 		d[k][direction_flag].append(v)
-
+	print("Done packet calculations")
 	####### Both Direction Calculations ########
 	del_vals = []
 	df_dict = {}
@@ -108,7 +111,7 @@ if __name__ == '__main__':
 			df_dict[k].append(d[k][1][i+1])
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
-
+	print("Done flow calculations")
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
 	'i_min_e', 'i_mean_e', 'i_max_e',
@@ -155,7 +158,7 @@ if __name__ == '__main__':
 	max_depth = 10
 	#for i in range(0,len(max_depth)):
 	rf = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimator, 
-		n_jobs=-1, random_state=42,max_features=None, oob_score=True)#'auto')
+		n_jobs=-1, random_state=42,max_features=None)#'auto')
 	
 	rf_enc = OneHotEncoder()
 	rf_lm = LogisticRegression()
@@ -163,8 +166,8 @@ if __name__ == '__main__':
 	rf_enc.fit(rf.apply(X_train))
 	rf_lm.fit(rf_enc.transform(rf.apply(X_train_lr)), y_train_lr)
 
-	score = cross_val_score(rf_lm, rf_enc.transform(rf.apply(X_train_lr)), y_train_lr, cv=10).mean()
-	print("Score with the entire dataset = %.5f" % score)
+	#score = cross_val_score(rf_lm, rf_enc.transform(rf.apply(X_train_lr)), y_train_lr, cv=10).mean()
+	#print("Score with the entire dataset = %.5f" % score)
 
 	y_pred_rf_lm = rf_lm.predict_proba(rf_enc.transform(rf.apply(X_test)))[:, 1]
 	fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_rf_lm)

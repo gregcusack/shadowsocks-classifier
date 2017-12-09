@@ -24,7 +24,9 @@ drop_list = []
 
 if __name__ == '__main__':
 	df_dict = collect_data()						# data_collection
+	print("Done importing")
 	helper = set_df_for_ML(df_dict, drop_list)		# data_collection
+	print("done setting up dataframe")
 	df_data = helper[0]
 	
 	df_targ = df_data['is_ss']
