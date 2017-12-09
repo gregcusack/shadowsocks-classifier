@@ -24,9 +24,22 @@ from sklearn.model_selection import cross_val_score
 
 from data import *
 
+def drop_cols(df_data, drop_list):
+	for key in drop_list:
+		del df_data[key]
+	return df_data
+
+#drop_list = ["i_min_e", "i_mean_e", "i_max_e", "o_min_e", "o_mean_e", "o_max_e"]
+#drop_list = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
+#	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts', 
+#	'o_flow_dur','o_min_ia','o_mean_ia','o_max_ia','o_sdev_ia',
+#	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
+#	'min_burst', 'mean_burst', 'max_burst']
+
 if __name__ == '__main__':
 	"""
-	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	pkt_list = rdpcap("pcaps/merge.pcap")
 	s = pkt_list.sessions()
 	d = {}
 	ip_list = []
@@ -113,7 +126,7 @@ if __name__ == '__main__':
 			df_dict[k].append(d[k][1][i+1])
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
-
+	"""
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
 	'i_min_e', 'i_mean_e', 'i_max_e',
@@ -128,13 +141,15 @@ if __name__ == '__main__':
 	df_data = df_data.from_dict(df_dict, orient='index')
 	df_data.columns = columns
 
+	df_data = drop_cols(df_data, drop_list)
+
 	counts = df_data['is_ss'].value_counts()
 	diff0 = counts[0] - counts[1]
 	diff = abs(diff0)
 	if(diff0 > 0): # more SS data than no_SS data
 		vals = df_data[df_data['is_ss'] == 0]
 		index_to_remove = np.random.choice(len(vals), diff, replace=False) #vector of random ints from 0 to max index of computer articles
-		#print("num entries to randomly remove", len(index_to_remove))
+		print("num entries to randomly remove", len(index_to_remove))
 		vals = vals.drop(vals.index[index_to_remove]) #drop random ints
 		#print("num no_SS data after removal", len(vals))
 		big_temp = df_data.drop(df_data[(df_data.is_ss==0)].index)
@@ -149,8 +164,10 @@ if __name__ == '__main__':
 	
 	df_targ = df_data['is_ss']
 	del df_data['is_ss']
-	"""
-	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.3, random_state=42)
+	
+	len_col = len(df_data.columns)
+
+	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.5, random_state=10)
 
 	#X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
     #                                                        y_train,
@@ -160,7 +177,7 @@ if __name__ == '__main__':
 	max_depth = 10
 	#for i in range(0,len(max_depth)):
 	rf = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimator, 
-		n_jobs=-1, random_state=42,max_features=None, oob_score=True)#'auto')
+		n_jobs=-1, random_state=10,max_features=None)#, oob_score=True)#'auto')
 	
 	#rf_enc = OneHotEncoder()
 	#rf_lm = LogisticRegression()
@@ -190,13 +207,15 @@ if __name__ == '__main__':
 	plt.title("Random Forest Feature Importance")
 	plt.xlabel('Features')
 	plt.ylabel('Importance')
-	plt.xticks(range(len(columns)-1),columns[:-1])
-	ax.set_xticks(range(len(columns)-1))
-	ax.set_xticklabels(columns[:-1], rotation=60, fontsize=8)
-	#ax.xaxis.set_minor_locator(AutoMinorLocator(5))
-	#ax.tick_params(axis='x',which='minor',bottom='on')
-	#plt.axis().xaxis.set_tick_params(which='minor', top = 'off')
-	plt.plot(range(len(columns)-1), rf.feature_importances_)
+	#plt.xticks(range(len(columns)-1),columns[:-1])
+	#ax.set_xticks(range(len(columns)-1))
+	#ax.set_xticklabels(columns[:-1], rotation=60, fontsize=8)
+	#plt.plot(range(len(columns)-1), rf.feature_importances_)
+	#print(rf.feature_importances_)
+	plt.xticks(range(len_col),df_data.columns)
+	ax.set_xticks(range(len_col))
+	ax.set_xticklabels(df_data.columns, rotation=60, fontsize=8)
+	plt.plot(range(len_col), rf.feature_importances_)
 	print(rf.feature_importances_)
 	
 	y_pred = rf.predict(X_test)

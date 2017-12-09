@@ -96,15 +96,21 @@ def get_min_mean_max_pkt_len(flow):
 	num_pkts = 0
 	max_len = 0
 	total_len = 0
+	tmp = 0
 	for p in flow:
 		length = len(p)
 		total_len += length
 		num_pkts += 1
 		if length < min_len:
-			min_len = length
+			if(length > 100):
+				min_len = length
+			else:
+				tmp = min_len
 		if length > max_len:
 			max_len = length
 	mean_len = float(total_len)/float(num_pkts)
+	if min_len > 1000000:
+		min_len = tmp
 	return [min_len, mean_len, max_len]
 """
 def get_min_pkt_len(flow):

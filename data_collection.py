@@ -4,6 +4,7 @@ from data import *
 
 def collect_data():
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
+	print("Done loading")
 	s = pkt_list.sessions()
 	d = {}
 	ip_list = []
@@ -15,9 +16,12 @@ def collect_data():
 		split = re.split(">",k)
 		ip_src = re.search("(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",split[0]).group()
 		ip_dst = re.search("(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)",split[1]).group()
-		if proto == "TCP" or proto == "UDP":
+		#if proto == "TCP" or proto == "UDP":
+		if proto == "TCP":
 			src_prt = re.search(":(\d+)\s",split[0]).group()[1:-1]
 			dst_prt = re.search(":(\d+)",split[1]).group()[1:]
+		else:
+			continue
 		direction_flag = True
 		if("10." in ip_src or "172.16" in ip_src or "172.31" in ip_src or "192.168" in ip_src):
 			direction_flag = True #outflow
@@ -59,6 +63,7 @@ def collect_data():
 		d[k][direction_flag].append(holder[2])
 		d[k][direction_flag].append(v)
 
+	print("Done with packet features")
 	####### Both Direction Calculations ########
 	del_vals = []
 	df_dict = {}
@@ -82,6 +87,7 @@ def collect_data():
 			df_dict[k].append(d[k][1][i+1])
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
+	print("Done with flow features")
 	return df_dict
 
 def set_df_for_ML(df_dict, drop_list):
@@ -125,6 +131,7 @@ def drop_cols(df_data, drop_list):
 	for key in drop_list:
 		del df_data[key]
 	return df_data
+
 
 
 
