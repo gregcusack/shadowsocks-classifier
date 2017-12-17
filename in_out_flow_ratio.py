@@ -15,6 +15,7 @@ import scipy.fftpack
 from data import *
 
 if __name__ == '__main__':
+	"""
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
 	s = pkt_list.sessions()
 	d = {}
@@ -74,44 +75,45 @@ if __name__ == '__main__':
 		d[k][direction_flag].append(get_num_pkts(v)) #this fcn and the one above could be combined
 		d[k][direction_flag].append(is_ss(k))
 		d[k][direction_flag].append(v)
-
+	"""
 	pkt_lens_ss = {}
 	pkt_lens_no_ss = {}
 	del_vals = []
 	ss_pkts = 0
 	no_ss_pkts = 0
-	for k, v in d.iteritems():
-		if not d[k][0] or not d[k][1]:
-			del_vals.append(k)
-	for i in range(len(del_vals)):
-		del d[del_vals[i]]
+	#for k, v in d.iteritems():
+	#	if not d[k][0] or not d[k][1]:
+	#		del_vals.append(k)
+	#for i in range(len(del_vals)):
+	#	del d[del_vals[i]]
+	
 	for k,v in d.iteritems():
-		d[k].append(get_out_in_ratio(v))
-		if v[0][11] == 1: #checks if ss
-			for p in v[0][12]:
-				if len(p) > 1514:
+		#d[k].append(get_out_in_ratio(v))
+		if v[9] == 1: #checks if ss
+			for p in v[0][14]:
+				if len(p) > 1514:# or len(p) < 100:
 					continue
 				if len(p) not in pkt_lens_ss:
 					pkt_lens_ss[len(p)] = 0
 				pkt_lens_ss[len(p)] += 1
 				ss_pkts += 1
-			for p in v[1][12]:
-				if len(p) > 1514:
+			for p in v[1][14]:
+				if len(p) > 1514:# or len(p) < 100:
 					continue
 				if -len(p) not in pkt_lens_ss:
 					pkt_lens_ss[-len(p)] = 0
 				pkt_lens_ss[-len(p)] += 1
 				ss_pkts += 1
 		else: #no ss
-			for p in v[0][12]: 
-				if len(p) > 1514:
+			for p in v[0][14]: 
+				if len(p) > 1514:# or len(p) < 100:
 					continue
 				if len(p) not in pkt_lens_no_ss:
 					pkt_lens_no_ss[len(p)] = 0
 				pkt_lens_no_ss[len(p)] += 1
 				no_ss_pkts += 1
-			for p in v[1][12]:
-				if len(p) > 1514:
+			for p in v[1][14]:
+				if len(p) > 1514:# or len(p) < 100:
 					continue
 				if -len(p) not in pkt_lens_no_ss:
 					pkt_lens_no_ss[-len(p)] = 0
@@ -130,7 +132,7 @@ if __name__ == '__main__':
 	plt.title("Packet Length Frequency (With Shadowsocks)")
 	plt.xlabel('Packet Length (bytes)')
 	plt.ylabel('Frequency')
-	plt.hist(x_ss, weights=weights_ss, bins=100)
+	plt.hist(x_ss, weights=weights_ss, bins=200)
 
 	no_ss_arr = np.array(pkt_lens_no_ss.items())
 	no_ss_arr = no_ss_arr[np.argsort(no_ss_arr[:,0])]
@@ -139,7 +141,7 @@ if __name__ == '__main__':
 	plt.title("Packet Length Frequency (No Shadowsocks)")
 	plt.xlabel('Packet Length (bytes)')
 	plt.ylabel('Frequency')
-	plt.hist(x_no_ss, weights=weights_no_ss, bins=100)
+	plt.hist(x_no_ss, weights=weights_no_ss, bins=200)
 
 	plt.show()
 

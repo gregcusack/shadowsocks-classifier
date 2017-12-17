@@ -30,16 +30,29 @@ def drop_cols(df_data, drop_list):
 	return df_data
 
 #drop_list = ["i_min_e", "i_mean_e", "i_max_e", "o_min_e", "o_mean_e", "o_max_e"]
+#drop_list = ["i_min_e", "o_min_e"]
+#drop_list = ["o_min_e", "o_mean_e", "o_max_e"]
 #drop_list = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 #	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts', 
 #	'o_flow_dur','o_min_ia','o_mean_ia','o_max_ia','o_sdev_ia',
 #	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
-#	'min_burst', 'mean_burst', 'max_burst']
+#	'i_min_burst', 'i_mean_burst', 'i_max_burst',
+#	'o_min_burst', 'o_mean_burst', 'o_max_burst', 'biflow_rat']
+#drop_list = ['i_flow_dur','i_min_ia','i_mean_ia','i_sdev_ia',
+#	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts', 
+#	'o_flow_dur','o_min_ia','o_mean_ia','o_sdev_ia','i_min_e','o_max_e',
+#	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
+#	'i_min_burst', 'i_mean_burst', 'i_max_burst',
+#	'o_min_burst', 'o_mean_burst', 'o_max_burst', 'biflow_rat']
+drop_list = []
+
+#drop_list = ["o_min_e","o_mean_e"]
 
 if __name__ == '__main__':
 	"""
-	#pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss.pcap")
-	pkt_list = rdpcap("pcaps/merge.pcap")
+	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss_NO_HTTP.pcap")
+	#pkt_list = rdpcap("pcaps/merge_NO_HTTP.pcap")
+	print("done read")
 	s = pkt_list.sessions()
 	d = {}
 	ip_list = []
@@ -103,6 +116,7 @@ if __name__ == '__main__':
 		d[k][direction_flag].append(holder[2])
 		d[k][direction_flag].append(v)
 
+	print("done pkt_calc")
 	####### Both Direction Calculations ########
 	del_vals = []
 	df_dict = {}
@@ -113,10 +127,15 @@ if __name__ == '__main__':
 		del d[del_vals[i]]
 	for k,v in d.iteritems():
 		d[k].append(get_out_in_ratio(v))
-		min_max_burst = get_min_mean_max_burst_len(v)
-		d[k].append(min_max_burst[0])
-		d[k].append(min_max_burst[1])
-		d[k].append(min_max_burst[2])
+		min_max_burst = get_min_mean_max_burst_len(v, True) #out burst
+		d[k].append(min_max_burst[0]) #out burst
+		d[k].append(min_max_burst[1]) #out burst
+		d[k].append(min_max_burst[2]) #out burst
+		min_max_burst = get_min_mean_max_burst_len(v, False) #in burst
+		d[k].append(min_max_burst[0]) #in burst
+		d[k].append(min_max_burst[1]) #in burst
+		d[k].append(min_max_burst[2]) #in burst
+
 		d[k].append(is_ss(k))
 
 		df_dict[k] = []
@@ -126,6 +145,7 @@ if __name__ == '__main__':
 			df_dict[k].append(d[k][1][i+1])
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
+
 	"""
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
@@ -133,7 +153,8 @@ if __name__ == '__main__':
 	'o_flow_dur','o_min_ia','o_mean_ia','o_max_ia','o_sdev_ia',
 	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
 	'o_min_e', 'o_mean_e', 'o_max_e',
-	'biflow_rat', 'min_burst', 'mean_burst', 'max_burst',
+	'biflow_rat', 'o_min_burst', 'o_mean_burst', 'o_max_burst', 
+	'i_min_burst', 'i_mean_burst', 'i_max_burst', 
 	'is_ss']
 	
 
@@ -141,7 +162,11 @@ if __name__ == '__main__':
 	df_data = df_data.from_dict(df_dict, orient='index')
 	df_data.columns = columns
 
+	df_data = df_data[df_data.o_mean_e != 0]
+	df_data = df_data[df_data.i_mean_e != 0]
+
 	df_data = drop_cols(df_data, drop_list)
+	
 
 	counts = df_data['is_ss'].value_counts()
 	diff0 = counts[0] - counts[1]
@@ -166,18 +191,18 @@ if __name__ == '__main__':
 	del df_data['is_ss']
 	
 	len_col = len(df_data.columns)
-
-	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.5, random_state=10)
+	
+	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.7, random_state=10)
 
 	#X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
     #                                                        y_train,
     #                                                        test_size=0.5, random_state=42)
 	
-	n_estimator = 10
-	max_depth = 10
+	n_estimator = 100
+	max_depth = 40
 	#for i in range(0,len(max_depth)):
 	rf = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimator, 
-		n_jobs=-1, random_state=10,max_features=None)#, oob_score=True)#'auto')
+		n_jobs=-1, random_state=10,max_features='auto')#, oob_score=True)#'auto')
 	
 	#rf_enc = OneHotEncoder()
 	#rf_lm = LogisticRegression()
@@ -236,9 +261,46 @@ if __name__ == '__main__':
 	print('svm precision = tp / (tp + fp): ', forest_precision)
 	print('F1 Score: ', forest_f1_score)
 
-	plt.show()
+	labels = ['No SS', 'SS']
+	cm = confusion_matrix(y_test, forest_pred)
+	print(cm)
+	fig1 = plt.figure()
+	ax = fig1.add_subplot(111)
 
+	ax.text(0,0,
+            'True No SS (TN): %d'%(cm[0][0]),
+            va='center',
+            ha='center',
+            bbox=dict(fc='w',boxstyle='round,pad=1'))
+	ax.text(0,1,
+            'False No SS Pred (FN): %d'%(cm[1][0]),
+            va='center',
+            ha='center',
+            bbox=dict(fc='w',boxstyle='round,pad=1'))
+
+	ax.text(1,0,
+            'False SS Pred (FP): %d'%(cm[0][1]),
+            va='center',
+            ha='center',
+            bbox=dict(fc='w',boxstyle='round,pad=1'))
+
+	ax.text(1,1,
+            'True SS (TP): %d'%(cm[1][1]),
+            va='center',
+            ha='center',
+            bbox=dict(fc='w',boxstyle='round,pad=1'))
+
+	cax = ax.matshow(cm)
+	plt.title('Confusion matrix: Random Forest Classifier')
+	fig1.colorbar(cax)
+	ax.set_xticklabels([''] + labels)
+	ax.set_yticklabels([''] + labels)
+	plt.xlabel('Predicted')
+	plt.ylabel('True')
+
+	plt.show()
 	
+
 
 
 

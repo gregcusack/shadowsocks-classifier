@@ -174,7 +174,7 @@ def get_in_out_ts(biflow,in_out_ts):
 	in_out_ts.sort()
 	return in_out_ts
 
-def get_min_mean_max_burst_len(biflow):
+def get_min_mean_max_burst_len(biflow, toggle):
 	max_burst = 0
 	min_burst = 1000000000
 	in_out_ts = []
@@ -183,7 +183,7 @@ def get_min_mean_max_burst_len(biflow):
 	in_count = 0
 	burst_lens = []
 	for i in range(len(in_out_ts)):
-		if in_out_ts[i][1] != 1:	#check if in flow
+		if in_out_ts[i][1] != toggle:	#check if in flow
 			if out_count == 0:
 				continue
 			in_count += 1
@@ -247,7 +247,8 @@ def get_min_mean_max_payload_entropy(flow):
 			max_e = tmp
 		total_e += tmp
 	if count == 0:
-		min_e = 0
+		#min_e = 0
+		return [4, 4, 4]
 	else:
 		mean_e = float(total_e)/float(count)
 	#print([min_e, mean_e, max_e])

@@ -1,26 +1,49 @@
-from sklearn import datasets, linear_model, model_selection, preprocessing, metrics
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.linear_model import LinearRegression
-from sklearn.linear_model import Ridge, Lasso
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, cross_val_score, cross_val_predict
+from sklearn import linear_model, model_selection, preprocessing, metrics
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.metrics import accuracy_score, auc
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, precision_score, recall_score, accuracy_score, confusion_matrix, f1_score, r2_score
-from sklearn import svm
-from sklearn.svm import SVC
+from sklearn.linear_model import LogisticRegression
 import pandas as pd
 import numpy as np
 import random
 import csv
 from csv import reader
 import pylab
+from scapy.all import *
 import os
 import math
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.preprocessing import MinMaxScaler, Normalizer
-from sklearn.naive_bayes import GaussianNB
+import re
+import matplotlib.pyplot as plt
+from scipy import stats
+import scipy.fftpack
+from matplotlib.ticker import AutoMinorLocator
+from sklearn.model_selection import cross_val_score
+from sklearn.feature_selection import SelectKBest
+from sklearn.feature_selection import chi2
+from sklearn.feature_selection import VarianceThreshold
 
 from data import *
+
+def drop_cols(df_data, drop_list):
+	for key in drop_list:
+		del df_data[key]
+	return df_data
+
+#drop_list = ["i_min_e", "i_mean_e", "i_max_e", "o_min_e", "o_mean_e", "o_max_e"]
+#drop_list = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
+#	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts', 
+#	'o_flow_dur','o_min_ia','o_mean_ia','o_max_ia','o_sdev_ia',
+#	'o_min_len','o_mean_len','o_max_len','o_sdev_len','o_#pkts',
+#	'min_burst', 'mean_burst', 'max_burst']
+#drop_list = ['i_flow_dur','i_min_ia','i_mean_ia','i_min_len','i_max_len','i_sdev_len',
+#	'i_#pkts','i_min_e', 'i_max_e','o_min_ia','o_mean_ia','o_sdev_ia',
+#	'o_min_len','o_mean_len','biflow_rat', 'o_min_burst','o_max_burst',
+#	'i_min_burst','i_max_burst']
+
+drop_list = []
 
 if __name__ == '__main__':
 	"""
@@ -163,53 +186,96 @@ if __name__ == '__main__':
 
 	X_train, X_test, y_train, y_test = train_test_split(df_data, df_targ, test_size=0.3, random_state=10)
 
+	#X_train, X_train_lr, y_train, y_train_lr = train_test_split(X_train,
+    #                                                        y_train,
+    #                                                        test_size=0.5, random_state=42)
 
-	########################### Multinomial Bayes ################
-	bayes_clf = GaussianNB()
-	#td_xTrain_scaled = MinMaxScaler().fit_transform(xTrain) #scale to between 0 and 1 bc bayes clf can't take negative
-	#td_xTest_scaled = MinMaxScaler().fit_transform(xTest)
+	
+	n_estimator = 10
+	max_depth = 10
+	#for i in range(0,len(max_depth)):
+	rf = RandomForestClassifier(max_depth=max_depth, n_estimators=n_estimator, 
+		n_jobs=-1, random_state=10,max_features=None)#, oob_score=True)#'auto')
 
-	bayes_clf.fit(X_train, y_train) #run with X_train for better accuracy bc bayes works better for discrete values!
-	bayes_score = bayes_clf.score(X_train, y_train)
-	bayes_probs = bayes_clf.predict_proba(X_test)[:,1]
-	print('multinomial naive bayes score: ', bayes_score)
+	#rf_enc = OneHotEncoder()
+	#rf_lm = LogisticRegression()
+	rf.fit(X_train, y_train)
+	#rf_enc.fit(rf.apply(X_train))
+	#rf_lm.fit(rf_enc.transform(rf.apply(X_train_lr)), y_train_lr)
 
-	bayes_pred = bayes_clf.predict(X_test)
+	score = cross_val_score(rf, X_train, y_train, cv=10).mean()
+	print("Score with the entire dataset = %.5f" % score)
 
-	#ROC curve
-	fpr_1, tpr_1, thresholds = metrics.roc_curve(y_test, bayes_probs) 
-	#print(fpr)
-	#print(tpr)
-	#print(thresholds)
-	fig0 = plt.figure()
-	plt.title('Multinomial Naive Bayes ROC Curve')
+	#y_pred_rf_lm = rf_lm.predict_proba(rf_enc.transform(rf.apply(X_test)))[:, 1]
+	y_pred_rf = rf.predict_proba(X_test)[:, 1]
+	fpr, tpr, _ = metrics.roc_curve(y_test, y_pred_rf)
+	
+	#print("num fp: {}".format(fpr))
+
+	roc_auc = auc(fpr, tpr)
+	plt.figure()
+	plt.title('Random Forest ROC Curve')
 	plt.xlabel('False Positive Rate')
 	plt.ylabel('True Positive Rate')
-	plt.plot(fpr_1, tpr_1)
+	plt.plot(fpr, tpr, label='ROC Curve (area = %0.5f)' % roc_auc)
+	plt.legend(loc="lower right")
 
-	#compare the above to that of other algorithms
+	fig = plt.figure()
+	ax = fig.add_subplot(111)
+	plt.title("Random Forest Feature Importance")
+	plt.xlabel('Features')
+	plt.ylabel('Importance')
+	#plt.xticks(range(len(columns)-1),columns[:-1])
+	#ax.set_xticks(range(len(columns)-1))
+	#ax.set_xticklabels(columns[:-1], rotation=60, fontsize=8)
+	#plt.plot(range(len(columns)-1), rf.feature_importances_)
+	#print(rf.feature_importances_)
+	plt.xticks(range(len_col),df_data.columns)
+	ax.set_xticks(range(len_col))
+	ax.set_xticklabels(df_data.columns, rotation=60, fontsize=8)
+	plt.plot(range(len_col), rf.feature_importances_)
+	print(rf.feature_importances_)
 
-	bayes_accuracy = accuracy_score(y_test, bayes_pred)
-	bayes_recall = recall_score(y_test, bayes_pred, pos_label=1)
-	bayes_precision= precision_score(y_test, bayes_pred, pos_label=1)
+	#for i in range(len(rf.feature_importances_)):
+	#	if rf.feature_importances_[i] != 0:
+	#		print i
+	
+	y_pred = rf.predict(X_test)
+	print(accuracy_score(y_test, y_pred))
 
-	print('bayes accuracy = correct / total: ', bayes_accuracy)
-	print('bayes recall = tp / (tp + fn): ', bayes_recall)
-	print('bayes precision = tp / (tp + fp): ', bayes_precision)
+	truePred = rf.predict(X_train)
+	forest_pred = rf.predict(X_test)
+	forest_score = rf.score(X_test, y_test)
+	#fpr, tpr, thresholds = metrics.roc_curve(y_test, X_test, pos_label=1)
+
+	forest_accuracy = accuracy_score(y_test, forest_pred)
+	forest_recall = recall_score(y_test, forest_pred, pos_label=1)
+	forest_precision= precision_score(y_test, forest_pred, pos_label=1)
+	forest_f1_score = f1_score(y_test, forest_pred, labels=None, pos_label=1, average='weighted')
+
+	print('svm accuracy = correct / total: ', forest_accuracy)
+	print('svm recall = tp / (tp + fn): ', forest_recall)
+	print('svm precision = tp / (tp + fp): ', forest_precision)
+	print('F1 Score: ', forest_f1_score)
+
 
 	labels = ['No SS', 'SS']
-	cm = confusion_matrix(y_test, bayes_pred)
+	cm = confusion_matrix(y_test, forest_pred)
 	print(cm)
 	fig1 = plt.figure()
 	ax = fig1.add_subplot(111)
 	cax = ax.matshow(cm)
-	plt.title('Confusion matrix: Multinomial Naive Bayes Classifier')
+	plt.title('Confusion matrix: Random Forest Classifier')
 	fig1.colorbar(cax)
 	ax.set_xticklabels([''] + labels)
 	ax.set_yticklabels([''] + labels)
 	plt.xlabel('Predicted')
 	plt.ylabel('True')
 
-
 	plt.show()
+
+
+
+
+
 
