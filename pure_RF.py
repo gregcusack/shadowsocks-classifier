@@ -49,7 +49,6 @@ drop_list = []
 #drop_list = ["o_min_e","o_mean_e"]
 
 if __name__ == '__main__':
-	"""
 	pkt_list = rdpcap("pcaps/merged_pcap_no_ss_and_ss_NO_HTTP.pcap")
 	#pkt_list = rdpcap("pcaps/merge_NO_HTTP.pcap")
 	print("done read")
@@ -146,7 +145,6 @@ if __name__ == '__main__':
 		for i in range(len(d[k])-2):
 			df_dict[k].append(d[k][i+2])
 
-	"""
 	columns = ['i_flow_dur','i_min_ia','i_mean_ia','i_max_ia','i_sdev_ia',
 	'i_min_len','i_mean_len','i_max_len','i_sdev_len','i_#pkts',
 	'i_min_e', 'i_mean_e', 'i_max_e',
